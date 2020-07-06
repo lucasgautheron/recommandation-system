@@ -5,7 +5,7 @@ import nltk
 import os
 
 #stanfordnlp.download('fr', "stanfordnlp_resources")
-#nlpspacy = spacy.load('fr_core_news_md')
+nlpspacy = spacy.load('fr_core_news_md')
 stop_words = set(nltk.corpus.stopwords.words('french'))
 
 config = {
@@ -21,10 +21,10 @@ config = {
 }
 nlp = stanfordnlp.Pipeline(**config) # Initialize the pipeline using a configuration dict
 
-keep_pos = ['NOUN', 'VERB', 'NUM', 'PROPN', 'ADJ']
+keep_pos = ['NOUN', 'VERB', 'PROPN']
 
 def extract_words(s):
-    return [wrd.lemma.lower() for sent in nlp(s).sentences for wrd in sent.words if (wrd.upos in keep_pos and wrd.lemma not in stop_words and wrd.lemma.isalpha())]
+    return [wrd.lemma.lower() for sent in nlp(s).sentences for wrd in sent.words if (wrd.upos in keep_pos and wrd.lemma not in stop_words and wrd.lemma not in ['.', ',', ':', ';'])]
 
 # extract lemma
 def get_embedding(s):
@@ -39,3 +39,20 @@ def get_embedding(s):
 
     embs = np.array(embs)
     return np.mean(embs, axis=0)
+
+def compute_embeddings(words, weights):
+    embs = []
+
+    weight_sum = 0
+    for word in words:
+        idf = weights[word]
+        weight_sum += idf
+        nlpwrd = nlpspacy(word)
+        embs.append(np.multiply(idf, np.array(nlpwrd.vector)))
+
+    if len(embs) == 0:
+        return np.zeros(300)
+
+    return np.divide(np.mean(embs, axis=0), weight_sum)
+
+    

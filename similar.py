@@ -5,21 +5,21 @@ import math
 import timeit
 import text
 import sklearn.decomposition
-
-def inverse_document_frequency(x, n):
-    return math.log(n/x)
+import scipy.spatial
 
 class SimilarArticles:
     TAG_WEIGHTS = {
-        'STORY_TAG': 1,
+        'STORY_TAG': 0.5,
         'PROGRAM': 0,
-        'WORD': 0.1
+        'WORD': 0.5
     }
 
     def __init__(self):
-        self.articles = []
+        self.articles = {}
+        self.words = {}
+        self.word_list = []
         self.tags = {}
-        self.tag_list = [0]
+        self.tag_list = []
 
         res = requests.get(
             "https://api.lemediatv.fr/api/1/public/stories/?page=1&per_page=1000",
@@ -29,8 +29,6 @@ class SimilarArticles:
         )
         entries = res.json()['results']
 
-        articles = {}
-        tags = {}
         for entry in entries:
             words = text.extract_words(entry['title'])
 
@@ -40,58 +38,48 @@ class SimilarArticles:
                 'category': entry['primary_category']['slug'],
                 'published_at': datetime.datetime.strptime(entry['published_at'][:19], '%Y-%m-%dT%H:%M:%S'),
                 'slug': entry['slug'],
-                'tags': [tag['slug'] for tag in entry['story_tags']] + [entry['primary_category']['slug']] + words
+                'tags': [tag['slug'] for tag in entry['story_tags']],
+                'words': words
             }
             
-            articles[article['slug']] = article
+            self.articles[article['slug']] = article
             for tag in entry['story_tags']:
-                if tag['slug'] not in tags:
-                    tags[tag['slug']] = {'scheme': tag['scheme']}
-
-            if entry['primary_category']['slug'] not in tags:
-                tags[entry['primary_category']['slug']] = {'scheme': 'PROGRAM'}
+                if tag['slug'] not in self.tags:
+                    self.tags[tag['slug']] = 1
+                else:
+                    self.tags[tag['slug']] += 1
 
             for word in words:
-                if word not in tags:
-                    tags[word] = {'scheme': 'WORD'}
+                if word not in self.words:
+                    self.words[word] = 1
+                else:
+                    self.words[word] += 1
 
-            print(words)
+            print(len(self.words))
 
-        self.articles = articles
-        self.article_list = sorted(articles.keys())
-        self.tags = tags
-        self.tag_list = sorted(tags.keys())
+        
+        self.article_list = sorted(self.articles.keys())
+        self.word_list = sorted(self.words.keys())
+        self.tag_list = sorted(self.tags.keys())
 
     def prepare(self):
-        self.article_tag_matrix = np.array([
-            [
-                1 if tag in self.articles[article]['tags'] else 0 for article in self.article_list
-            ]
-            for tag in self.tag_list
-        ])
+        self.word_idf = np.array([math.log(len(self.word_list)/self.words[word]) for word in self.word_list])
+        self.tag_idf = np.array([math.log(len(self.tag_list)/self.tags[tag]) for tag in self.tag_list])
 
-        pca = sklearn.decomposition.PCA(n_components=100)
-        pca.fit(np.transpose(self.article_tag_matrix))
-        
-        self.tag_idf = np.array([inverse_document_frequency(
-            tag_frequency,
-            len(self.article_list)
-        ) for tag_frequency in np.sum(self.article_tag_matrix, axis = 1)])
+        self.word_embeddings = np.array([text.compute_embeddings(self.articles[article]['words'], self.words) for article in self.article_list])
+        self.tag_embeddings = np.array([text.compute_embeddings(self.articles[article]['tags'], self.tags) for article in self.article_list])
 
-        self.tag_weights = np.array([
-            self.TAG_WEIGHTS[self.tags[tag]['scheme']] for tag in self.tag_list
-        ])
-
-        self.tag_weights = np.multiply(self.tag_weights, self.tag_idf)
+        self.embeddings = np.add(
+            np.multiply(self.TAG_WEIGHTS['WORD'], self.word_embeddings),
+            np.multiply(self.TAG_WEIGHTS['STORY_TAG'], self.tag_embeddings)
+        )
 
 
     def distance(self, a, b):
         a_pos = self.article_list.index(a)
         b_pos = self.article_list.index(b)
 
-        return np.linalg.norm(
-            np.multiply(self.article_tag_matrix[:,a_pos]-self.article_tag_matrix[:,b_pos], self.tag_weights)
-        )
+        return scipy.spatial.distance.cosine(self.embeddings[a_pos,:], self.embeddings[b_pos,:])    
 
     def closest(self, article, n):
         article_pos = self.article_list.index(article)
@@ -112,9 +100,8 @@ class SimilarArticles:
 
 similar = SimilarArticles()
 similar.prepare()
-print(similar.article_tag_matrix.shape)
-print(similar.tag_idf)
-print(similar.tag_weights)
+print(similar.embeddings.shape)
+
 
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "rojava-lavenir-suspendu-6J-ixMmYTZWjKgbndIqRxA"))
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "convention-citoyenne-pour-le-climat-macron-face-a-ses-contradictions-7GJB3OutTdaUHksYArtz8Q"))
