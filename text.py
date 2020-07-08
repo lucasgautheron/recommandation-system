@@ -24,7 +24,16 @@ nlp = stanfordnlp.Pipeline(**config) # Initialize the pipeline using a configura
 keep_pos = ['NOUN', 'VERB', 'PROPN']
 
 def extract_words(s):
-    return [wrd.lemma.lower() for sent in nlp(s).sentences for wrd in sent.words if (wrd.upos in keep_pos and wrd.lemma not in stop_words and wrd.lemma not in ['.', ',', ':', ';'])]
+    return [
+        wrd.lemma.lower()
+        for sent in nlp(s).sentences
+        for wrd in sent.words
+        if (
+            wrd.upos in keep_pos
+            and wrd.lemma not in stop_words
+            and wrd.lemma not in ['.', ',', ':', ';']
+        )
+    ]
 
 # extract lemma
 def get_embedding(s):
@@ -34,6 +43,7 @@ def get_embedding(s):
             if wrd.upos in keep_pos:
                 nlpwrd = nlpspacy(wrd.lemma)
                 embs.append(np.array(nlpwrd.vector))
+                
     if len(embs) == 0:
         embs.append(np.zeros(300))
 

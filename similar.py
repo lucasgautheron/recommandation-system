@@ -66,19 +66,37 @@ class SimilarArticles:
         self.word_idf = np.array([math.log(len(self.article_list)/self.words[word]) for word in self.word_list])
         self.tag_idf = np.array([math.log(len(self.article_list)/self.tags[tag]) for tag in self.tag_list])
 
-        self.word_embeddings = np.array([text.compute_embeddings(self.articles[article]['words'], self.words) for article in self.article_list])
-        self.tag_embeddings = np.array([text.compute_embeddings(self.articles[article]['tags'], self.tags) for article in self.article_list])
+        self.tag_matrix = np.array([
+            np.multiply([1 if tag in self.articles[article]['tags'] else 0 for tag in self.tag_list], self.tag_idf)
+            for article in self.article_list
+        ])
 
-        self.embeddings = np.add(
-            np.multiply(self.TAG_WEIGHTS['WORD'], self.word_embeddings),
-            np.multiply(self.TAG_WEIGHTS['STORY_TAG'], self.tag_embeddings)
+        self.word_embeddings = np.array([text.compute_embeddings(self.articles[article]['words'], self.words) for article in self.article_list])
+
+        r = 0.5
+        alpha = 1
+        beta = alpha * (r/(1-r)) * self.word_embeddings.shape[1] / self.tag_matrix.shape[1]
+
+        print(self.word_embeddings.shape, self.tag_matrix.shape, alpha, beta)
+
+        norm = math.sqrt(alpha**2+beta**2)
+        alpha /= norm
+        beta /= norm
+        
+        print(alpha, beta)
+
+        self.matrix = np.concatenate(
+            (np.multiply(alpha, self.word_embeddings), np.multiply(beta, self.tag_matrix)),
+            axis = 1
         )
+
+        print(self.matrix.shape)
 
     def distance(self, a, b):
         a_pos = self.article_list.index(a)
         b_pos = self.article_list.index(b)
 
-        return scipy.spatial.distance.cosine(self.embeddings[a_pos,:], self.embeddings[b_pos,:])    
+        return scipy.spatial.distance.cosine(self.matrix[a_pos,:], self.matrix[b_pos,:])    
 
     def closest(self, article, n):
         article_pos = self.article_list.index(article)
@@ -101,8 +119,6 @@ class SimilarArticles:
 
 similar = SimilarArticles()
 similar.prepare()
-print(similar.embeddings.shape)
-
 
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "rojava-lavenir-suspendu-6J-ixMmYTZWjKgbndIqRxA"))
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "convention-citoyenne-pour-le-climat-macron-face-a-ses-contradictions-7GJB3OutTdaUHksYArtz8Q"))
