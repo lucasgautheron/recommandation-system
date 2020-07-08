@@ -63,8 +63,8 @@ class SimilarArticles:
         self.tag_list = sorted(self.tags.keys())
 
     def prepare(self):
-        self.word_idf = np.array([math.log(len(self.word_list)/self.words[word]) for word in self.word_list])
-        self.tag_idf = np.array([math.log(len(self.tag_list)/self.tags[tag]) for tag in self.tag_list])
+        self.word_idf = np.array([math.log(len(self.article_list)/self.words[word]) for word in self.word_list])
+        self.tag_idf = np.array([math.log(len(self.article_list)/self.tags[tag]) for tag in self.tag_list])
 
         self.word_embeddings = np.array([text.compute_embeddings(self.articles[article]['words'], self.words) for article in self.article_list])
         self.tag_embeddings = np.array([text.compute_embeddings(self.articles[article]['tags'], self.tags) for article in self.article_list])
@@ -73,7 +73,6 @@ class SimilarArticles:
             np.multiply(self.TAG_WEIGHTS['WORD'], self.word_embeddings),
             np.multiply(self.TAG_WEIGHTS['STORY_TAG'], self.tag_embeddings)
         )
-
 
     def distance(self, a, b):
         a_pos = self.article_list.index(a)
@@ -97,6 +96,8 @@ class SimilarArticles:
         articles.sort(key = lambda x: x['distance'])
         return articles[:n]
 
+    def show_article(self, slug):
+        return self.articles[slug]['title']
 
 similar = SimilarArticles()
 similar.prepare()
@@ -107,7 +108,21 @@ print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "convention-citoyenne-pour-le-climat-macron-face-a-ses-contradictions-7GJB3OutTdaUHksYArtz8Q"))
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "bolivie-retour-sur-un-putsch-uKOZhoppQ7ydHATA7Xo7yA"))
 
-print(similar.closest("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", 10))
-print(similar.closest("lex-agent-secret-qui-en-savait-beaucoup-trop-4-contre-la-corruption-dans-lirak-sous-tutelle-des-etats-unis-7H5duI4KRPq3Cq2r9wqLwA", 6))
-print(similar.closest("startup-nation-larnaque-du-siecle-NnM1i8etQ4i-h07dMwikgQ", 6))
+slug = "convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw"
+closest = similar.closest(slug, 10)
+print(similar.show_article(slug), " : ")
+for item in closest:
+    print("%s (%.3f)" % (similar.show_article(item['slug']), item['distance']))
+
+slug = "lex-agent-secret-qui-en-savait-beaucoup-trop-4-contre-la-corruption-dans-lirak-sous-tutelle-des-etats-unis-7H5duI4KRPq3Cq2r9wqLwA"
+closest = similar.closest(slug, 6)
+print(similar.show_article(slug), " : ")
+for item in closest:
+    print("%s (%.3f)" % (similar.show_article(item['slug']), item['distance']))
+
+slug = "startup-nation-larnaque-du-siecle-NnM1i8etQ4i-h07dMwikgQ"
+closest = similar.closest(slug, 6)
+print(similar.show_article(slug), " : ")
+for item in closest:
+    print("%s (%.3f)" % (similar.show_article(item['slug']), item['distance']))
 #print(timeit.timeit('similar.closest("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", 6)', number = 100, globals=globals()))
