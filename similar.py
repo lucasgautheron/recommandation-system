@@ -193,6 +193,7 @@ else:
         with open('cache.json', 'w+') as f:
             f.write(similar.to_json())
             f.close()
+    similar.prepare()
 
 similar.reduce(12)
 
