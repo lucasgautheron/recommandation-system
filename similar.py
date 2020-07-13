@@ -67,7 +67,7 @@ class SimilarArticles:
                 'title': entry['title'],
                 'headline_or_extract_medium': entry['headline_or_extract_medium'],
                 'category': entry['primary_category']['slug'],
-                'published_at': datetime.datetime.strptime(entry['published_at'][:19], '%Y-%m-%dT%H:%M:%S'),
+                'published_at': entry['published_at']#datetime.datetime.strptime(entry['published_at'][:19], '%Y-%m-%dT%H:%M:%S'),
                 'slug': entry['slug'],
                 'tags': [tag['slug'] for tag in entry['story_tags']],
                 'title_words': title_words,
@@ -164,7 +164,7 @@ similar = SimilarArticles()
 with open('cache.json', 'w+') as f:
     f.write(similar.to_json())
     f.close()
-    
+
 similar.prepare()
 
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "rojava-lavenir-suspendu-6J-ixMmYTZWjKgbndIqRxA"))
