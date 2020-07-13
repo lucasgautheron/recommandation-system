@@ -50,11 +50,8 @@ def compute_embeddings(words, weights = None, normalize = True):
         word = words[i]
         weight = weights[i]
 
-        try:
-            nlpwrd = nlpspacy(word)
-            embs.append(np.multiply(weight, np.array(nlpwrd.vector)))
-        except:
-            print("warning: failed to vectorize word '%s'" % (word))
+        nlpwrd = nlpspacy(word)
+        embs.append(np.multiply(weight, np.array(nlpwrd.vector)))
 
     if len(embs) == 0:
         return np.zeros(300)
