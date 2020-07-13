@@ -7,6 +7,7 @@ import text
 import sklearn.decomposition
 import scipy.spatial
 import json
+import os
 
 class SimilarArticles:
     TAG_WEIGHTS = {
