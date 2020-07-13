@@ -29,8 +29,8 @@ def extract_words(s):
 
     return [
         wrd.lemma.lower()
-        for wrd in sent.words
         for sent in nlp(s).sentences
+        for wrd in sent.words
         if (
             wrd.upos in keep_pos
             and wrd.lemma not in stop_words
