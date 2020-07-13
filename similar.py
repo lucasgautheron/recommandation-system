@@ -152,14 +152,19 @@ class SimilarArticles:
 
         open('matrix.json', 'w+').write(json.dumps(self.matrix.tolist()))
 
-    def reduce(self, n_dims):
-        print(self.matrix.shape)
-        pca = sklearn.decomposition.PCA(n_components = n_dims)
-        pca.fit(self.matrix)
-        print(pca.explained_variance_ratio_)
-        self.matrix = pca.transform(self.matrix)
-        print(self.matrix.shape)
+    def reduce(self, target_explained_variance = 0.95):
+        for n_dims in range(self.matrix.shape[1]):
+            pca = sklearn.decomposition.PCA(n_components = n_dims)
+            pca.fit(self.matrix)
+            explained_variance = np.sum(pca.explained_variance_ratio_)
 
+            print(n_dims, explained_variance)
+
+            if  explained_variance >= target_explained_variance:
+                self.matrix = pca.transform(self.matrix)
+                return True
+
+        raise ValueError('Cannot reach target explained variance')            
 
     def distance(self, a, b):
         a_pos = self.article_list.index(a)
@@ -200,7 +205,7 @@ if os.path.exists('matrix.json'):
 else:
     similar.prepare()
 
-similar.reduce(12)
+similar.reduce()
 
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "rojava-lavenir-suspendu-6J-ixMmYTZWjKgbndIqRxA"))
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "convention-citoyenne-pour-le-climat-macron-face-a-ses-contradictions-7GJB3OutTdaUHksYArtz8Q"))
