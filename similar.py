@@ -150,7 +150,7 @@ class SimilarArticles:
             axis = 1
         )
 
-        open('matrix.json', 'w+').write(json.dumps(self.matrix.tolist())).close()
+        open('matrix.json', 'w+').write(json.dumps(self.matrix.tolist()))
 
     def reduce(self, n_dims):
         print(self.matrix.shape)
@@ -187,16 +187,17 @@ class SimilarArticles:
         return self.articles[slug]['title']
 
 similar = SimilarArticles()
-if os.path.exists('matrix.json'):
-    similar.matrix = json.load(open('matrix.json', 'r'))
+if os.path.exists('cache.json'):
+    similar.from_json(open('cache.json', 'r').read())
 else:
-    if os.path.exists('cache.json'):
-        similar.from_json(open('cache.json', 'r').read())
-    else:
-        similar.load()
-        with open('cache.json', 'w+') as f:
-            f.write(similar.to_json())
-            f.close()
+    similar.load()
+    with open('cache.json', 'w+') as f:
+        f.write(similar.to_json())
+        f.close()
+
+if os.path.exists('matrix.json'):
+    similar.matrix = np.array(json.load(open('matrix.json', 'r')))
+else:
     similar.prepare()
 
 similar.reduce(12)
