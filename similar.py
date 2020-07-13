@@ -117,7 +117,7 @@ class SimilarArticles:
         ])
 
         pool = mp.Pool(mp.cpu_count())
-        
+
         title_embeddings = np.array(pool.starmap(text.compute_embeddings, [
             (
                 self.articles[article]['title_words'],
@@ -150,7 +150,7 @@ class SimilarArticles:
             axis = 1
         )
 
-        open('matrix.json', 'w+').write(json.dumps(self.matrix)).close()
+        open('matrix.json', 'w+').write(json.dumps(self.matrix.tolist())).close()
 
     def reduce(self, n_dims):
         print(self.matrix.shape)
