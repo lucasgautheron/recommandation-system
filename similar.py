@@ -24,26 +24,23 @@ class SimilarArticles:
     def to_json(self):
         return json.dumps({
             'articles': self.articles,
-            'article_list': self.article_list,
             'title_words': self.title_words,
-            'title_word_list': self.title_word_list,
             'content_words': self.content_words,
-            'content_word_list': self.content_word_list,
-            'tags': self.tags,
-            'tag_list': self.tag_list
+            'tags': self.tags
         })
 
     def from_json(self, json_str):
         data = json.loads(json_str)
 
         self.articles = data['articles']
-        self.article_list = data['article_list']
         self.title_words = data['title_words']
-        self.title_word_list = data['title_word_list']
         self.content_words = data['content_words']
-        self.content_word_list = data['content_word_list']
         self.tags = data['tags']
-        self.tag_list = data['tag_list']
+
+        self.article_list = sorted(self.articles.keys())
+        self.title_word_list = sorted(self.title_words.keys())
+        self.content_word_list = sorted(self.content_words.keys())
+        self.tag_list = sorted(self.tags.keys())
  
     def __init__(self):
         self.articles = {}
@@ -149,11 +146,15 @@ class SimilarArticles:
             axis = 1
         )
 
-        if dims:
-            print(self.matrix.shape)
-            pca = sklearn.decomposition.PCA(n_components = dims)
-            self.matrix = pca.fit_transform(self.matrix)
-            print(self.matrix.shape)
+        open('matrix.json', 'w+').write(json.dumps()).close()
+
+    def reduce(self, n_dims):
+        print(self.matrix.shape)
+        pca = sklearn.decomposition.PCA(n_components = dims)
+        pca.fit(self.matrix)
+        print(pca.explained_variance_ratio_)
+        self.matrix = pca.transform(self.matrix)
+        print(self.matrix.shape)
 
 
     def distance(self, a, b):
@@ -182,15 +183,18 @@ class SimilarArticles:
         return self.articles[slug]['title']
 
 similar = SimilarArticles()
-if os.path.exists('cache.json'):
-    similar.from_json(open('cache.json', 'r').read())
+if os.path.exists('matrix.json'):
+    similar.matrix = json.load(open('matrix.json', 'r'))
 else:
-    similar.load()
-    with open('cache.json', 'w+') as f:
-        f.write(similar.to_json())
-        f.close()
+    if os.path.exists('cache.json'):
+        similar.from_json(open('cache.json', 'r').read())
+    else:
+        similar.load()
+        with open('cache.json', 'w+') as f:
+            f.write(similar.to_json())
+            f.close()
 
-similar.prepare(dims = 8)
+similar.reduce(dims = 12)
 
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "rojava-lavenir-suspendu-6J-ixMmYTZWjKgbndIqRxA"))
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "convention-citoyenne-pour-le-climat-macron-face-a-ses-contradictions-7GJB3OutTdaUHksYArtz8Q"))
