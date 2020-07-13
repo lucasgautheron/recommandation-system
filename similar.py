@@ -102,7 +102,7 @@ class SimilarArticles:
         self.content_word_list = sorted(self.content_words.keys())
         self.tag_list = sorted(self.tags.keys())
 
-    def prepare(self, dims = None):
+    def prepare(self):
         self.title_word_idf = np.array([math.log(len(self.article_list)/self.title_words[word]) for word in self.title_word_list])
         self.content_word_idf = np.array([math.log(len(self.article_list)/self.content_words[word]) for word in self.content_word_list])
         self.tag_idf = np.array([math.log(len(self.article_list)/self.tags[tag]) for tag in self.tag_list])
@@ -150,7 +150,7 @@ class SimilarArticles:
 
     def reduce(self, n_dims):
         print(self.matrix.shape)
-        pca = sklearn.decomposition.PCA(n_components = dims)
+        pca = sklearn.decomposition.PCA(n_components = n_dims)
         pca.fit(self.matrix)
         print(pca.explained_variance_ratio_)
         self.matrix = pca.transform(self.matrix)
