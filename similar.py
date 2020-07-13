@@ -51,6 +51,8 @@ class SimilarArticles:
         self.tags = {}
         self.tag_list = []
 
+    
+    def load(self):
         res = requests.get(
             "https://api.lemediatv.fr/api/1/public/stories/?page=1&per_page=1000",
             headers = {
@@ -100,7 +102,7 @@ class SimilarArticles:
         self.content_word_list = sorted(self.content_words.keys())
         self.tag_list = sorted(self.tags.keys())
 
-    def prepare(self):
+    def prepare(self, dims = None):
         self.title_word_idf = np.array([math.log(len(self.article_list)/self.title_words[word]) for word in self.title_word_list])
         self.content_word_idf = np.array([math.log(len(self.article_list)/self.content_words[word]) for word in self.content_word_list])
         self.tag_idf = np.array([math.log(len(self.article_list)/self.tags[tag]) for tag in self.tag_list])
@@ -144,6 +146,13 @@ class SimilarArticles:
             axis = 1
         )
 
+        if dims:
+            print(self.matrix.shape)
+            pca = sklearn.decomposition.PCA(n_components = dims)
+            self.matrix = pca.fit_transform(matrix)
+            print(self.matrix.shape)
+
+
     def distance(self, a, b):
         a_pos = self.article_list.index(a)
         b_pos = self.article_list.index(b)
@@ -170,11 +179,15 @@ class SimilarArticles:
         return self.articles[slug]['title']
 
 similar = SimilarArticles()
-with open('cache.json', 'w+') as f:
-    f.write(similar.to_json())
-    f.close()
+if os.path.exists('cache.json'):
+    similar.from_json(open('cache.json', 'r').read())
+else:
+    similar.load()
+    with open('cache.json', 'w+') as f:
+        f.write(similar.to_json())
+        f.close()
 
-similar.prepare()
+similar.prepare(dims = 8)
 
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "rojava-lavenir-suspendu-6J-ixMmYTZWjKgbndIqRxA"))
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "convention-citoyenne-pour-le-climat-macron-face-a-ses-contradictions-7GJB3OutTdaUHksYArtz8Q"))
