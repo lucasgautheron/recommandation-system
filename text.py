@@ -24,10 +24,13 @@ nlp = stanfordnlp.Pipeline(**config) # Initialize the pipeline using a configura
 keep_pos = ['NOUN', 'VERB', 'PROPN']
 
 def extract_words(s):
+    if not s:
+        return []
+
     return [
         wrd.lemma.lower()
-        for sent in nlp(s).sentences
         for wrd in sent.words
+        for sent in nlp(s).sentences
         if (
             wrd.upos in keep_pos
             and wrd.lemma not in stop_words
