@@ -97,7 +97,7 @@ class SimilarArticles:
         
         self.article_list = sorted(self.articles.keys())
         self.title_word_list = sorted(self.title_words.keys())
-        self.content_word_list = sorted(self.title_words.keys())
+        self.content_word_list = sorted(self.content_words.keys())
         self.tag_list = sorted(self.tags.keys())
 
     def prepare(self):
@@ -115,7 +115,16 @@ class SimilarArticles:
         title_embeddings = np.array([
             text.compute_embeddings(
                 self.articles[article]['words'],
-                [self.title_words[word] for word in self.articles[article]['words']],
+                [self.title_words[word] for word in self.articles[article]['title_words']],
+                False
+            )
+            for article in self.article_list
+        ])
+
+        content_embeddings = np.array([
+            text.compute_embeddings(
+                self.articles[article]['words'],
+                [self.content_words[word] for word in self.articles[article]['content_words']],
                 False
             )
             for article in self.article_list
