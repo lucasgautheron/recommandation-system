@@ -9,6 +9,8 @@ import scipy.spatial
 import json
 import os
 
+import multiprocessing as mp
+
 class SimilarArticles:
     TAG_WEIGHTS = {
         'STORY_TAG': 0.5,
@@ -114,23 +116,25 @@ class SimilarArticles:
             for article in self.article_list
         ])
 
-        title_embeddings = np.array([
-            text.compute_embeddings(
+        pool = mp.Pool(mp.cpu_count())
+        
+        title_embeddings = np.array(pool.starmap(text.compute_embeddings, [
+            (
                 self.articles[article]['title_words'],
                 [self.title_words[word] for word in self.articles[article]['title_words']],
                 False
             )
             for article in self.article_list
-        ])
+        ]))
 
-        content_embeddings = np.array([
-            text.compute_embeddings(
+        content_embeddings = np.array(pool.starmap(text.compute_embeddings, [
+            (
                 self.articles[article]['content_words'],
                 [self.content_words[word] for word in self.articles[article]['content_words']],
                 False
             )
             for article in self.article_list
-        ])
+        ]))
 
         self.word_embeddings = np.add(
             np.multiply(self.WORD_WEIGHTS['TITLE'], title_embeddings),
