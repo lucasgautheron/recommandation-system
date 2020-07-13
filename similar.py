@@ -24,6 +24,7 @@ class SimilarArticles:
     def to_json(self):
         return json.dumps({
             'articles': self.articles,
+            'article_list': self.article_list,
             'title_words': self.title_words,
             'title_word_list': self.title_word_list,
             'content_words': self.content_words,
@@ -36,6 +37,7 @@ class SimilarArticles:
         data = json.loads(json_str)
 
         self.articles = data['articles']
+        self.article_list = data['article_list']
         self.title_words = data['title_words']
         self.title_word_list = data['title_word_list']
         self.content_words = data['content_words']
@@ -150,7 +152,7 @@ class SimilarArticles:
         if dims:
             print(self.matrix.shape)
             pca = sklearn.decomposition.PCA(n_components = dims)
-            self.matrix = pca.fit_transform(matrix)
+            self.matrix = pca.fit_transform(self.matrix)
             print(self.matrix.shape)
 
 
