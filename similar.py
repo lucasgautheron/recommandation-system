@@ -146,7 +146,7 @@ class SimilarArticles:
             axis = 1
         )
 
-        open('matrix.json', 'w+').write(json.dumps()).close()
+        open('matrix.json', 'w+').write(json.dumps(self.matrix)).close()
 
     def reduce(self, n_dims):
         print(self.matrix.shape)
