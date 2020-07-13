@@ -114,7 +114,7 @@ class SimilarArticles:
 
         title_embeddings = np.array([
             text.compute_embeddings(
-                self.articles[article]['words'],
+                self.articles[article]['title_words'],
                 [self.title_words[word] for word in self.articles[article]['title_words']],
                 False
             )
@@ -123,7 +123,7 @@ class SimilarArticles:
 
         content_embeddings = np.array([
             text.compute_embeddings(
-                self.articles[article]['words'],
+                self.articles[article]['content_words'],
                 [self.content_words[word] for word in self.articles[article]['content_words']],
                 False
             )
