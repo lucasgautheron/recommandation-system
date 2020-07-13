@@ -6,6 +6,7 @@ import timeit
 import text
 import sklearn.decomposition
 import scipy.spatial
+import json
 
 class SimilarArticles:
     TAG_WEIGHTS = {
@@ -14,23 +15,53 @@ class SimilarArticles:
         'WORD': 0.5
     }
 
+    WORD_WEIGHTS = {
+        'TITLE': 0.5,
+        'CONTENT': 0.5
+    }
+
+    def to_json(self):
+        return json.dumps({
+            'articles': self.articles,
+            'title_words': self.title_words,
+            'title_word_list': self.title_word_list,
+            'content_words': self.content_words,
+            'content_word_list': self.content_word_list,
+            'tags': self.tags,
+            'tag_list': self.tag_list
+        })
+
+    def from_json(self, json_str):
+        data = json.loads(json_str)
+
+        self.articles = data['articles']
+        self.title_words = data['title_words']
+        self.title_word_list = data['title_word_list']
+        self.content_words = data['content_words']
+        self.content_word_list = data['content_word_list']
+        self.tags = data['tags']
+        self.tag_list = data['tag_list']
+ 
     def __init__(self):
         self.articles = {}
-        self.words = {}
-        self.word_list = []
+        self.title_words = {}
+        self.title_word_list = []
+        self.content_words = {}
+        self.content_word_list = []
         self.tags = {}
         self.tag_list = []
 
         res = requests.get(
             "https://api.lemediatv.fr/api/1/public/stories/?page=1&per_page=1000",
             headers = {
-                'X-Fields': 'title,primary_category,published_at,slug,story_tags,headline_or_extract_medium'
+                'X-Fields': 'title,primary_category,published_at,slug,story_tags,headline_or_extract_medium,content'
             }
         )
         entries = res.json()['results']
 
         for entry in entries:
-            words = text.extract_words(entry['title'])
+            title_words = text.extract_words(entry['title'])
+            content_words = text.extract_words(text.strip_tags(entry['content']))
 
             article = {
                 'title': entry['title'],
@@ -39,7 +70,8 @@ class SimilarArticles:
                 'published_at': datetime.datetime.strptime(entry['published_at'][:19], '%Y-%m-%dT%H:%M:%S'),
                 'slug': entry['slug'],
                 'tags': [tag['slug'] for tag in entry['story_tags']],
-                'words': words
+                'title_words': title_words,
+                'content_words': content_words
             }
             
             self.articles[article['slug']] = article
@@ -49,48 +81,59 @@ class SimilarArticles:
                 else:
                     self.tags[tag['slug']] += 1
 
-            for word in words:
-                if word not in self.words:
-                    self.words[word] = 1
+            for word in title_words:
+                if word not in self.title_words:
+                    self.title_words[word] = 1
                 else:
-                    self.words[word] += 1
+                    self.title_words[word] += 1
 
-            print(len(self.words))
+            for word in content_words:
+                if word not in self.content_words:
+                    self.content_words[word] = 1
+                else:
+                    self.content_words[word] += 1
 
+            print(len(self.content_words), len(self.title_words))
         
         self.article_list = sorted(self.articles.keys())
-        self.word_list = sorted(self.words.keys())
+        self.title_word_list = sorted(self.title_words.keys())
+        self.content_word_list = sorted(self.title_words.keys())
         self.tag_list = sorted(self.tags.keys())
 
     def prepare(self):
-        self.word_idf = np.array([math.log(len(self.article_list)/self.words[word]) for word in self.word_list])
+        self.title_word_idf = np.array([math.log(len(self.article_list)/self.title_words[word]) for word in self.title_word_list])
+        self.content_word_idf = np.array([math.log(len(self.article_list)/self.content_words[word]) for word in self.content_word_list])
         self.tag_idf = np.array([math.log(len(self.article_list)/self.tags[tag]) for tag in self.tag_list])
+        #idf_norm = np.linalg.norm(self.tag_idf)
+        #self.tag_idf = np.divide(self.tag_idf, idf_norm)
 
         self.tag_matrix = np.array([
             np.multiply([1 if tag in self.articles[article]['tags'] else 0 for tag in self.tag_list], self.tag_idf)
             for article in self.article_list
         ])
 
-        self.word_embeddings = np.array([text.compute_embeddings(self.articles[article]['words'], self.words) for article in self.article_list])
+        title_embeddings = np.array([
+            text.compute_embeddings(
+                self.articles[article]['words'],
+                [self.title_words[word] for word in self.articles[article]['words']],
+                False
+            )
+            for article in self.article_list
+        ])
 
-        r = 0.5
-        alpha = 1
-        beta = alpha * (r/(1-r)) * self.word_embeddings.shape[1] / self.tag_matrix.shape[1]
-
-        print(self.word_embeddings.shape, self.tag_matrix.shape, alpha, beta)
-
-        norm = math.sqrt(alpha**2+beta**2)
-        alpha /= norm
-        beta /= norm
-        
-        print(alpha, beta)
-
-        self.matrix = np.concatenate(
-            (np.multiply(alpha, self.word_embeddings), np.multiply(beta, self.tag_matrix)),
-            axis = 1
+        self.word_embeddings = np.add(
+            np.multiply(self.WORD_WEIGHTS['TITLE'], title_embeddings),
+            np.multiply(self.WORD_WEIGHTS['CONTENT'], content_embeddings)
         )
 
-        print(self.matrix.shape)
+        r = 0.5
+        self.matrix = np.concatenate(
+            (
+                np.multiply((1-r)/self.word_embeddings.shape[1], self.word_embeddings),
+                np.multiply(r/self.tag_matrix.shape[1], self.tag_matrix)
+            ),
+            axis = 1
+        )
 
     def distance(self, a, b):
         a_pos = self.article_list.index(a)
@@ -118,6 +161,10 @@ class SimilarArticles:
         return self.articles[slug]['title']
 
 similar = SimilarArticles()
+with open('cache.json', 'w+') as f:
+    f.write(similar.to_json())
+    f.close()
+    
 similar.prepare()
 
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "rojava-lavenir-suspendu-6J-ixMmYTZWjKgbndIqRxA"))

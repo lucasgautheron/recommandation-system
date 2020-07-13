@@ -35,34 +35,47 @@ def extract_words(s):
         )
     ]
 
-# extract lemma
-def get_embedding(s):
+def compute_embeddings(words, weights = None, normalize = True):
     embs = []
-    for sent in nlp(s).sentences:
-        for wrd in sent.words:
-            if wrd.upos in keep_pos:
-                nlpwrd = nlpspacy(wrd.lemma)
-                embs.append(np.array(nlpwrd.vector))
-                
-    if len(embs) == 0:
-        embs.append(np.zeros(300))
+    
+    if weights == None:
+        weights = np.full(len(words), 1)
 
-    embs = np.array(embs)
-    return np.mean(embs, axis=0)
+    assert len(words) == len(weights), "word array's length does not match weights"
 
-def compute_embeddings(words, weights):
-    embs = []
+    for i in range(len(words)):
+        word = words[i]
+        weight = weights[i]
 
-    weight_sum = 0
-    for word in words:
-        idf = weights[word]
-        weight_sum += idf
         nlpwrd = nlpspacy(word)
-        embs.append(np.multiply(idf, np.array(nlpwrd.vector)))
+        embs.append(np.multiply(weight, np.array(nlpwrd.vector)))
 
     if len(embs) == 0:
         return np.zeros(300)
 
-    return np.divide(np.mean(embs, axis=0), weight_sum)
+    vector = np.sum(embs, axis = 0)
 
-    
+    if normalize:
+        return vector/np.linalg.norm(vector)
+    else:
+        return np.divide(vector, np.sum(weights))
+
+from io import StringIO
+from html.parser import HTMLParser
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.reset()
+        self.strict = False
+        self.convert_charrefs= True
+        self.text = StringIO()
+    def handle_data(self, d):
+        self.text.write(d)
+    def get_data(self):
+        return self.text.getvalue()
+
+def strip_tags(html):
+    s = MLStripper()
+    s.feed(html)
+    return s.get_data()
