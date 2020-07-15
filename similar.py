@@ -79,11 +79,11 @@ class SimilarArticles:
             }
             
             self.articles[article['slug']] = article
-            for tag in entry['story_tags']:
-                if tag['label'] not in self.tags:
-                    self.tags[tag['label']] = 1
+            for tag in article['tags']:
+                if tag not in self.tags:
+                    self.tags[tag] = 1
                 else:
-                    self.tags[tag['label']] += 1
+                    self.tags[tag] += 1
 
             for word in title_words:
                 if word not in self.title_words:
@@ -151,9 +151,9 @@ class SimilarArticles:
         )
 
         self.embeddings = np.add(
-            np.multiply(0.25, title_embeddings),
-            np.multiply(0.25, content_embeddings),
-            np.multiply(0.5, tag_embeddings)
+            np.multiply(0.125, title_embeddings),
+            np.multiply(0.125, content_embeddings),
+            np.multiply(0.75, tag_embeddings)
         )
 
         r = 0.5
