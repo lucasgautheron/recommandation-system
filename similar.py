@@ -151,9 +151,9 @@ class SimilarArticles:
         )
 
         self.embeddings = np.add(
-            np.multiply(1./3., title_embeddings),
-            np.multiply(1./3., content_embeddings),
-            np.multiply(1./3., tag_embeddings)
+            np.multiply(0.25, title_embeddings),
+            np.multiply(0.25, content_embeddings),
+            np.multiply(0.5., tag_embeddings)
         )
 
         r = 0.5
