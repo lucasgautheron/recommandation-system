@@ -73,17 +73,17 @@ class SimilarArticles:
                 'category': entry['primary_category']['slug'],
                 'published_at': entry['published_at'],#datetime.datetime.strptime(entry['published_at'][:19], '%Y-%m-%dT%H:%M:%S'),
                 'slug': entry['slug'],
-                'tags': [tag['slug'] for tag in entry['story_tags']],
+                'tags': [tag['label'] for tag in entry['story_tags']],
                 'title_words': title_words,
                 'content_words': content_words
             }
             
             self.articles[article['slug']] = article
             for tag in entry['story_tags']:
-                if tag['slug'] not in self.tags:
-                    self.tags[tag['slug']] = 1
+                if tag['label'] not in self.tags:
+                    self.tags[tag['label']] = 1
                 else:
-                    self.tags[tag['slug']] += 1
+                    self.tags[tag['label']] += 1
 
             for word in title_words:
                 if word not in self.title_words:
