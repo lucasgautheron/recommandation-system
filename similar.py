@@ -53,7 +53,6 @@ class SimilarArticles:
         self.tags = {}
         self.tag_list = []
         self.method = "embeddings"
-
     
     def load(self):
         res = requests.get(
@@ -167,6 +166,7 @@ class SimilarArticles:
         )
 
         open('matrix.json', 'w+').write(json.dumps(self.matrix.tolist()))
+        open('embeddings.json', 'w+').write(json.dumps(self.matrix.tolist()))
 
     def reduce(self, target_explained_variance = 0.95):
         for n_dims in range(self.matrix.shape[1]):
@@ -224,6 +224,7 @@ else:
 
 if os.path.exists('matrix.json'):
     similar.matrix = np.array(json.load(open('matrix.json', 'r')))
+    similar.embeddings = np.array(json.load(open('embeddings.json', 'r')))
 else:
     similar.prepare()
 
