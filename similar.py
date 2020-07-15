@@ -52,6 +52,7 @@ class SimilarArticles:
         self.content_word_list = []
         self.tags = {}
         self.tag_list = []
+        self.method = "embeddings"
 
     
     def load(self):
@@ -136,9 +137,24 @@ class SimilarArticles:
             for article in self.article_list
         ]))
 
+        tag_embeddings = np.array(pool.starmap(text.compute_embeddings, [
+            (
+                self.articles[article]['tags'],
+                [self.tags[tag] for tag in self.articles[article]['tags']],
+                False
+            )
+            for article in self.article_list
+        ]))
+
         self.word_embeddings = np.add(
             np.multiply(self.WORD_WEIGHTS['TITLE'], title_embeddings),
             np.multiply(self.WORD_WEIGHTS['CONTENT'], content_embeddings)
+        )
+
+        self.embeddings = np.add(
+            np.multiply(1./3., title_embeddings),
+            np.multiply(1./3., content_embeddings),
+            np.multiply(1./3., tag_embeddings)
         )
 
         r = 0.5
@@ -160,7 +176,7 @@ class SimilarArticles:
 
             print(n_dims, explained_variance)
 
-            if  explained_variance >= target_explained_variance:
+            if explained_variance >= target_explained_variance:
                 self.matrix = pca.transform(self.matrix)
                 return True
 
@@ -170,7 +186,13 @@ class SimilarArticles:
         a_pos = self.article_list.index(a)
         b_pos = self.article_list.index(b)
 
-        return scipy.spatial.distance.cosine(self.matrix[a_pos,:], self.matrix[b_pos,:])    
+        if self.method == "mixed":
+            return scipy.spatial.distance.cosine(self.matrix[a_pos,:], self.matrix[b_pos,:])
+        elif self.method == "embeddings":
+            return scipy.spatial.distance.cosine(self.embeddings[a_pos,:], self.embeddings[b_pos,:])
+        else:
+            raise ValueError("Invalid method '%s'" % (self.method))
+
 
     def closest(self, article, n):
         article_pos = self.article_list.index(article)
@@ -204,8 +226,6 @@ if os.path.exists('matrix.json'):
     similar.matrix = np.array(json.load(open('matrix.json', 'r')))
 else:
     similar.prepare()
-
-similar.reduce()
 
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "rojava-lavenir-suspendu-6J-ixMmYTZWjKgbndIqRxA"))
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "convention-citoyenne-pour-le-climat-macron-face-a-ses-contradictions-7GJB3OutTdaUHksYArtz8Q"))
