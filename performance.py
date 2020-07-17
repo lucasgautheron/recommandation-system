@@ -24,8 +24,8 @@ def get_articles():
     for entry in entries:
         articles[entry['slug']] = {
             'title': entry['title'],
-            'url': entry['canonical_url'],
-            'contextual_stories': entry['contextual_stories']
+            'url': entry['canonical_url']#,
+#            'contextual_stories': entry['contextual_stories']
         }
 
     return articles
