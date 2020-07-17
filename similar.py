@@ -156,11 +156,11 @@ class SimilarArticles:
             np.multiply(0.75, tag_embeddings)
         )
 
-        r = 0.5
+        r = 0.75
         self.matrix = np.concatenate(
             (
                 np.multiply((1-r)/self.word_embeddings.shape[1], self.word_embeddings),
-                np.multiply(r/self.tag_matrix.shape[1], self.tag_matrix)
+                np.multiply(r/self.tag_matrix.shape[1]/np.mean(self.tag_idf), self.tag_matrix)
             ),
             axis = 1
         )
@@ -227,6 +227,8 @@ if os.path.exists('matrix.json'):
     similar.embeddings = np.array(json.load(open('embeddings.json', 'r')))
 else:
     similar.prepare()
+
+similar.method = "mixed"
 
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "rojava-lavenir-suspendu-6J-ixMmYTZWjKgbndIqRxA"))
 print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "convention-citoyenne-pour-le-climat-macron-face-a-ses-contradictions-7GJB3OutTdaUHksYArtz8Q"))
