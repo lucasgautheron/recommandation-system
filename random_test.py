@@ -17,7 +17,7 @@ article_slug = random.choice(list(articles.keys()))
 article = articles[article_slug]
 
 closest = similar.closest(article_slug, 6)
-current_algorithm = requests.get("https://api.lemediatv.fr/api/1/public/stories/by-slug/%s" % (article_slug)).json()['contextual_stories']
+current_algorithm = requests.get("https://api.lemediatv.fr/api/1/public/stories/by-slug/%s" % (article_slug)).json()['results']['contextual_stories']
 
 print(article['title'])
 
