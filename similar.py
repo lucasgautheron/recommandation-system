@@ -55,6 +55,8 @@ class SimilarArticles:
         self.method = "embeddings"
     
     def load(self):
+        text.init()
+
         res = requests.get(
             "https://api.lemediatv.fr/api/1/public/stories/?page=1&per_page=1000",
             headers = {
@@ -105,6 +107,8 @@ class SimilarArticles:
         self.tag_list = sorted(self.tags.keys())
 
     def prepare(self):
+        text.init()
+        
         self.title_word_idf = np.array([math.log(len(self.article_list)/self.title_words[word]) for word in self.title_word_list])
         self.content_word_idf = np.array([math.log(len(self.article_list)/self.content_words[word]) for word in self.content_word_list])
         self.tag_idf = np.array([math.log(len(self.article_list)/self.tags[tag]) for tag in self.tag_list])

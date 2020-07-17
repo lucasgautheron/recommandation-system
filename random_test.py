@@ -2,7 +2,7 @@ import numpy as np
 import json
 import requests
 from similar import SimilarArticles
-import choice
+import random
 
 similar = SimilarArticles()
 similar.method = "mixed"
@@ -13,7 +13,7 @@ similar.embeddings = np.array(json.load(open('embeddings.json', 'r')))
 
 articles = json.load(open('articles.json', 'r'))
 
-article_slug = random.choice(articles.keys())
+article_slug = random.choice(list(articles.keys()))
 article = articles[article_slug]
 
 closest = similar.closest(article_slug, 6)
