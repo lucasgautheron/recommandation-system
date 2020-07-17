@@ -19,8 +19,8 @@ class SimilarArticles:
     }
 
     WORD_WEIGHTS = {
-        'TITLE': 0.5,
-        'CONTENT': 0.5
+        'TITLE': 0.25,
+        'CONTENT': 0.75
     }
 
     def to_json(self):
@@ -108,7 +108,7 @@ class SimilarArticles:
 
     def prepare(self):
         text.init()
-        
+
         self.title_word_idf = np.array([math.log(len(self.article_list)/self.title_words[word]) for word in self.title_word_list])
         self.content_word_idf = np.array([math.log(len(self.article_list)/self.content_words[word]) for word in self.content_word_list])
         self.tag_idf = np.array([math.log(len(self.article_list)/self.tags[tag]) for tag in self.tag_list])

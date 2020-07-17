@@ -23,7 +23,7 @@ print(article['title'])
 
 print("Avant :")
 for item in closest:
-    print(articles[item['slug']]['title'])
+    print("%s (%.3f)" % (articles[item['slug']]['title'], item['distance']))
 
 print("Apres :")
 for item in current_algorithm:
