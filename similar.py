@@ -53,9 +53,12 @@ class SimilarArticles:
         self.tags = {}
         self.tag_list = []
         self.method = "embeddings"
+
+        self.nlp_processor = None
     
     def load(self):
-        text.init()
+        if self.nlp_processor is None:
+            self.nlp_processor = text.NLPProcessor()
 
         res = requests.get(
             "https://api.lemediatv.fr/api/1/public/stories/?page=1&per_page=1000",
@@ -66,8 +69,8 @@ class SimilarArticles:
         entries = res.json()['results']
 
         for entry in entries:
-            title_words = text.extract_words(entry['title'])
-            content_words = text.extract_words(text.strip_tags(entry['content']))
+            title_words = self.nlp_processor.extract_words(entry['title'])
+            content_words = self.nlp_processor.extract_words(text.strip_tags(entry['content']))
 
             article = {
                 'title': entry['title'],
@@ -107,7 +110,8 @@ class SimilarArticles:
         self.tag_list = sorted(self.tags.keys())
 
     def prepare(self):
-        text.init()
+        if self.nlp_processor is None:
+            self.nlp_processor = text.NLPProcessor()
 
         self.title_word_idf = np.array([math.log(len(self.article_list)/self.title_words[word]) for word in self.title_word_list])
         self.content_word_idf = np.array([math.log(len(self.article_list)/self.content_words[word]) for word in self.content_word_list])
@@ -122,7 +126,7 @@ class SimilarArticles:
 
         pool = mp.Pool(mp.cpu_count())
 
-        title_embeddings = np.array(pool.starmap(text.compute_embeddings, [
+        title_embeddings = np.array(pool.starmap(self.nlp_processor.compute_embeddings, [
             (
                 self.articles[article]['title_words'],
                 [self.title_words[word] for word in self.articles[article]['title_words']],
@@ -131,7 +135,7 @@ class SimilarArticles:
             for article in self.article_list
         ]))
 
-        content_embeddings = np.array(pool.starmap(text.compute_embeddings, [
+        content_embeddings = np.array(pool.starmap(self.nlp_processor.compute_embeddings, [
             (
                 self.articles[article]['content_words'],
                 [self.content_words[word] for word in self.articles[article]['content_words']],
@@ -140,7 +144,7 @@ class SimilarArticles:
             for article in self.article_list
         ]))
 
-        tag_embeddings = np.array(pool.starmap(text.compute_embeddings, [
+        tag_embeddings = np.array(pool.starmap(self.nlp_processor.compute_embeddings, [
             (
                 self.articles[article]['tags'],
                 [self.tags[tag] for tag in self.articles[article]['tags']],
