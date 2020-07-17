@@ -219,7 +219,7 @@ class SimilarArticles:
 
             articles.append({
                 'slug': compare_slug,
-                'distance': self.distance(article, compare_slug)
+                'distance': self.distance(article, self.articles[compare_slug]['category']),
                 'time_factor': math.sqrt(1+(weeks/tau)**2)
             })
 

@@ -23,7 +23,7 @@ print(article['title'])
 
 print("Algorithme testé :")
 for item in closest:
-    print("%s (%.3f)" % (articles[item['slug']]['title'], item['distance']))
+    print("%s (%.3f, %.3f)" % (articles[item['slug']]['title'], item['distance'], item['time_factor']))
 
 print("Système actuel :")
 for item in current_algorithm:
