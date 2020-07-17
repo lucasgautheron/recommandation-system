@@ -215,11 +215,11 @@ class SimilarArticles:
             published_at = datetime.datetime.strptime(self.articles[compare_slug]['published_at'][:19], '%Y-%m-%dT%H:%M:%S')
             now = datetime.datetime.now()
             weeks = (now-published_at).total_seconds()/(86400*7)
-            tau = self.lifetimes[compare_slug]
+            tau = self.lifetimes[self.articles[compare_slug]['category']]
 
             articles.append({
                 'slug': compare_slug,
-                'distance': self.distance(article, self.articles[compare_slug]['category']),
+                'distance': self.distance(article, compare_slug),
                 'time_factor': math.sqrt(1+(weeks/tau)**2)
             })
 
