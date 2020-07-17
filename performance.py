@@ -1,3 +1,6 @@
+import numpy as np
+import json
+import requests
 from similar import SimilarArticles
 
 similar = SimilarArticles()
@@ -12,15 +15,25 @@ def get_articles():
     res = requests.get(
         "https://api.lemediatv.fr/api/1/public/stories/?page=1&per_page=1000",
         headers = {
-            'X-Fields': 'title,contextual_stories'
+            'X-Fields': 'title,canonical_url,slug,contextual_stories'
         }
     )
     entries = res.json()['results']
 
+    articles = {}
     for entry in entries:
-        print(entry)
+        articles[entry['slug']] = {
+            'title': entry['title'],
+            'url': entry['canonical_url'],
+            'contextual_stories': entry['contextual_stories']
+        }
+
+    return articles
 
 articles = get_articles()
+json.dump(articles, open('articles.json', 'w+'), indent = 2)
+
+
 
 # print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "rojava-lavenir-suspendu-6J-ixMmYTZWjKgbndIqRxA"))
 # print(similar.distance("convention-pour-le-climat-macron-arnaque-les-citoyens-Dk9Yx_51TruQT2kMmp8qaw", "convention-citoyenne-pour-le-climat-macron-face-a-ses-contradictions-7GJB3OutTdaUHksYArtz8Q"))
