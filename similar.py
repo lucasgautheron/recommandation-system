@@ -19,8 +19,8 @@ class SimilarArticles:
     }
 
     WORD_WEIGHTS = {
-        'TITLE': 0.25,
-        'CONTENT': 0.75
+        'TITLE': 0.5,
+        'CONTENT': 0.5
     }
 
     def to_json(self):
@@ -53,6 +53,8 @@ class SimilarArticles:
         self.tags = {}
         self.tag_list = []
         self.method = "embeddings"
+
+        self.lifetimes = json.load(open('lifetimes.json', 'r+'))
 
         self.nlp_processor = None
     
@@ -210,12 +212,18 @@ class SimilarArticles:
             if compare_slug == article:
                 continue
 
+            published_at = datetime.datetime.strptime(self.articles[compare_slug]['published_at'][:19], '%Y-%m-%dT%H:%M:%S')
+            now = datetime.datetime.now()
+            weeks = (now-published_at).total_seconds()/(86400*7)
+            tau = self.lifetimes[compare_slug]
+
             articles.append({
                 'slug': compare_slug,
                 'distance': self.distance(article, compare_slug)
+                'time_factor': math.sqrt(1+(weeks/tau)**2)
             })
 
-        articles.sort(key = lambda x: x['distance'])
+        articles.sort(key = lambda x: x['distance']*x['timefactor'])
         return articles[:n]
 
     def show_article(self, slug):

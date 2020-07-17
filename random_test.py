@@ -21,11 +21,11 @@ current_algorithm = requests.get("https://api.lemediatv.fr/api/1/public/stories/
 
 print(article['title'])
 
-print("Avant :")
+print("Algorithme testé :")
 for item in closest:
     print("%s (%.3f)" % (articles[item['slug']]['title'], item['distance']))
 
-print("Apres :")
+print("Système actuel :")
 for item in current_algorithm:
     print(item['title'])
 
